@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecommerce Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#151a2e;--ink2:#2b3350;--paper:#f4f5f8;--card:#ffffff;
+  --tiktok:#111827;--shopee:#ee4d2d;--fb:#1877f2;--live:#d6336c;--video:#7c3aed;
+  --up:#16a34a;--dn:#dc2626;--neu:#d97706;--line:#e7e9f0;--muted:#8b93a7;
+}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--paper);color:var(--ink);font-size:12.5px;}
+.wrap{max-width:1400px;margin:0 auto;padding:14px;}
+.top{background:var(--ink);color:#fff;border-radius:10px 10px 0 0;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.top h1{font-size:19px;font-weight:800;letter-spacing:-.3px;}
+.top .sub{font-size:10.5px;color:#a9b0c7;margin-top:2px;}
+.tabs{display:flex;gap:4px;}
+.tab{padding:7px 16px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:#c3c9dc;transition:.15s;}
+.tab:hover{background:rgba(255,255,255,.16);}
+.tab.on{background:#fff;color:var(--ink);}
+.ctrl{background:var(--card);border-bottom:2px solid var(--line);padding:9px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+.ctrl .grp{display:flex;flex-direction:column;gap:2px;}
+.ctrl label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.ctrl select{border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px;background:#fafbfc;color:var(--ink);font-weight:600;cursor:pointer;}
+.ctrl .seg{display:flex;gap:2px;background:#eef0f5;padding:2px;border-radius:7px;}
+.seg button{border:none;background:transparent;padding:4px 11px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.spacer{flex:1;}
+.btn-data{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:6px 14px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;}
+.btn-data:hover{background:var(--ink2);}
+.btn-ghost{border:1px solid var(--line);background:#fff;color:var(--ink);padding:6px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;}
+.status-dot{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--muted);}
+.dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1;}
+.dot.live{background:var(--up);}.dot.err{background:var(--dn);}
+.page{padding:14px 0;}
+.hidden{display:none;}
+.kpis{display:grid;gap:9px;margin-bottom:14px;}
+.k8{grid-template-columns:repeat(4,1fr);}.k5{grid-template-columns:repeat(5,1fr);}.k6{grid-template-columns:repeat(6,1fr);}
+@media(max-width:900px){.k8,.k5,.k6{grid-template-columns:repeat(2,1fr);}}
+.kpi{background:var(--card);border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(20,26,46,.06);border:1px solid var(--line);position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--ink));}
+.kpi .lb{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.kpi .vl{font-size:23px;font-weight:800;color:var(--ink);line-height:1.15;margin:3px 0 2px;letter-spacing:-.5px;}
+.kpi .dt{font-size:10px;color:var(--muted);}
+.up{color:var(--up);font-weight:700;}.dn{color:var(--dn);font-weight:700;}.neu{color:var(--neu);font-weight:700;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.g31{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:14px;}
+@media(max-width:900px){.g2,.g31{grid-template-columns:1fr;}}
+.card{background:var(--card);border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(20,26,46,.06);border:1px solid var(--line);}
+.card .ct{font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.ct .hint{font-size:9px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;}
+.cw{position:relative;height:150px;}.cw-lg{position:relative;height:180px;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:var(--ink);color:#fff;padding:7px 8px;text-align:right;font-weight:600;white-space:nowrap;font-size:10px;}
+th:first-child{text-align:left;}
+td{padding:5px 8px;text-align:right;border-bottom:1px solid #f1f2f6;white-space:nowrap;}
+td:first-child{text-align:left;font-weight:600;}
+tbody tr:hover{background:#f8fafc;}
+tr.tot{background:#eef2ff;font-weight:800;}tr.tot td{border-bottom:none;}
+.pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:9.5px;font-weight:700;}
+.pill-tt{background:#f3f4f6;color:#111827;}.pill-sp{background:#fef0ec;color:#ee4d2d;}.pill-fb{background:#e7f0fe;color:#1877f2;}
+.modal{position:fixed;inset:0;background:rgba(20,26,46,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.modal.on{display:flex;}
+.modal-box{background:#fff;border-radius:12px;width:100%;max-width:680px;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-hd{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:2;}
+.modal-hd h3{font-size:15px;font-weight:800;}
+.modal-hd .x{border:none;background:#f1f2f6;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:15px;color:var(--muted);}
+.modal-bd{padding:16px 20px;}
+.modal-bd p{font-size:12px;color:var(--ink2);margin-bottom:8px;line-height:1.5;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.field label span{font-weight:400;color:var(--muted);font-size:10px;}
+.field input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:11px;font-family:'SF Mono',Consolas,monospace;}
+.field input:focus{outline:none;border-color:var(--fb);}
+.steps{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--ink2);line-height:1.7;margin-bottom:14px;}
+.steps b{color:var(--ink);}
+.steps code{background:#eef2ff;padding:1px 5px;border-radius:4px;font-size:10px;}
+.modal-ft{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:#fff;}
+.msg{font-size:11px;padding:8px 12px;border-radius:7px;margin-top:8px;display:none;}
+.msg.ok{background:#dcfce7;color:#166534;display:block;}
+.msg.err{background:#fee2e2;color:#991b1b;display:block;}
+.msg.load{background:#fef9c3;color:#854d0e;display:block;}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:13px;}
+.empty b{color:var(--ink);display:block;font-size:15px;margin-bottom:8px;}
+.foot{text-align:center;padding:14px;font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Ecommerce Performance Dashboard</h1>
+      <div class="sub">TikTok · Shopee · Facebook · Livestream · Video — đọc trực tiếp từ Google Sheet báo cáo của bạn</div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-tab="overall">Overall 3 sàn</button>
+      <button class="tab" data-tab="live">Livestream</button>
+      <button class="tab" data-tab="video">Video</button>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <div class="grp"><label>Tháng</label><select id="monthSel"><option value="all">Tất cả</option></select></div>
+    <div class="grp" id="platGrp"><label>Nền tảng</label>
+      <div class="seg" id="platSeg">
+        <button class="on" data-p="all">Tất cả</button>
+        <button data-p="TikTok">TikTok</button>
+        <button data-p="Shopee">Shopee</button>
+        <button data-p="Facebook">Facebook</button>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <span class="status-dot"><span class="dot" id="statusDot"></span><span id="statusTxt">Chưa kết nối Sheet</span></span>
+    <button class="btn-ghost" id="btnReload">↻ Tải lại</button>
+    <button class="btn-data" id="btnCfg">⚙ Kết nối Google Sheet</button>
+  </div>
+
+  <div class="page" id="page-overall"></div>
+  <div class="page hidden" id="page-live"></div>
+  <div class="page hidden" id="page-video"></div>
+
+  <div class="foot">Data đọc trực tiếp từ Google Sheet đã publish. Sửa Sheet → bấm "Tải lại" → dashboard cập nhật. Số liệu tính từ data thật, không có số giả.</div>
+</div>
+
+<div class="modal" id="cfgModal">
+  <div class="modal-box">
+    <div class="modal-hd"><h3>Kết nối Google Sheet</h3><button class="x" id="cfgX">×</button></div>
+    <div class="modal-bd">
+      <div class="steps">
+        <b>Cách lấy link (làm 1 lần):</b><br>
+        1. Trong Google Sheet: <b>File → Share → Publish to web</b><br>
+        2. Chọn từng sheet (<code>OVERALL</code>, <code>LIVE</code>, <code>VIDEO</code>), định dạng <b>CSV</b><br>
+        3. Bấm <b>Publish</b>, copy link (dạng <code>.../pub?...output=csv</code>)<br>
+        4. Dán 3 link vào 3 ô dưới, bấm <b>Kết nối &amp; tải data</b>
+      </div>
+      <div class="field"><label>Link CSV — sheet OVERALL <span>(3 sàn)</span></label><input id="urlOverall" placeholder="https://docs.google.com/.../pub?gid=...&single=true&output=csv"></div>
+      <div class="field"><label>Link CSV — sheet LIVE <span>(livestream)</span></label><input id="urlLive" placeholder="https://docs.google.com/.../pub?gid=...&single=true&output=csv"></div>
+      <div class="field"><label>Link CSV — sheet VIDEO</label><input id="urlVideo" placeholder="https://docs.google.com/.../pub?gid=...&single=true&output=csv"></div>
+      <div class="msg" id="cfgMsg"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-ghost" id="cfgClear">Xóa link đã lưu</button>
+      <button class="btn-data" id="cfgSave">Kết nối &amp; tải data</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ STATE ============ */
+let dataOverall=[], dataLive=[], dataVideo=[];
+let state={tab:'overall',month:'all',plat:'all'};
+let charts={};
+const LS_KEY='ecom_dash_sheet_urls';
+
+const fmtVND=v=>v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':Math.round(v).toString();
+const fmtNum=v=>new Intl.NumberFormat('vi-VN').format(Math.round(v));
+const fmtPct=v=>(v*100).toFixed(1)+'%';
+const monthOf=d=>normDate(d).slice(0,7);
+const PCOL={TikTok:'#111827',Shopee:'#ee4d2d',Facebook:'#1877f2'};
+const HCOL=['#d6336c','#7c3aed','#0ea5e9','#f59e0b','#16a34a','#e11d48','#0891b2'];
+
+function normDate(d){ // accept 2026-07-01, 01/07/2026, 1/7/2026, 01/07 (dd/mm no year)
+  if(!d)return'';d=String(d).trim();
+  let m=d.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m=d.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  m=d.match(/^(\d{1,2})\/(\d{1,2})$/);if(m)return `${new Date().getFullYear()}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return d;
+}
+function num(x){if(x==null||x==='')return 0;let s=String(x).trim();if(/#(div|ref|n\/a|value)/i.test(s))return 0;s=s.replace(/[₫đ%\s]/g,'');
+  // VN format: dot = thousand sep, comma = decimal. Strip dots, turn comma into decimal point.
+  if(s.indexOf(',')>=0 && s.indexOf('.')>=0){s=s.replace(/\./g,'').replace(',','.');}
+  else if((s.match(/\./g)||[]).length>1){s=s.replace(/\./g,'');} // multiple dots = thousand sep
+  else if(/^\-?\d{1,3}\.\d{3}$/.test(s)){s=s.replace(/\./g,'');} // single dot + exactly 3 digits = VN thousand sep (158.028 -> 158028)
+  else s=s.replace(/,/g,''); // lone commas = thousand sep (US)
+  const n=parseFloat(s.replace(/[^\d.\-]/g,''));return isNaN(n)?0:n;}
+function low(x){return String(x==null?'':x).trim().toLowerCase();}
+function findRow(rows,pred){for(let i=0;i<rows.length;i++)if(pred(rows[i],i))return i;return -1;}
+function destroyCharts(){Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};}
+
+/* ============ CSV PARSE (RFC-ish, handles quotes) ============ */
+function parseCSV(text){
+  const rows=[];let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}
+    else{if(c==='"')q=true;else if(c===','){row.push(cur);cur='';}
+      else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';}
+      else if(c==='\r'){}else cur+=c;}
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows; // keep empty rows so section-label alignment (Video) stays correct
+}
+// map header names -> index (flexible/case-insensitive)
+function headerMap(headerRow){
+  const m={};headerRow.forEach((h,i)=>{m[String(h).trim().toLowerCase()]=i;});
+  return m;
+}
+function pick(hm,row,...names){for(const n of names){const i=hm[n.toLowerCase()];if(i!=null&&row[i]!=null)return row[i];}return'';}
+
+/* ============ FETCH SHEETS ============ */
+// detect sheet type by SCANNING ALL ROWS for signature headers (reports have title rows on top)
+function detectType(rows){
+  const hasCellAll=(pred)=>rows.some(r=>r.some(c=>pred(low(c))));
+  // LIVE: a row has both 'date' and 'host'
+  if(rows.some(r=>r.some(c=>low(c)==='date')&&r.some(c=>low(c)==='host')))return 'live';
+  // VIDEO: a row has 'tuần' and 'total plan'
+  if(rows.some(r=>r.some(c=>low(c)==='tuần')&&r.some(c=>low(c)==='total plan')))return 'video';
+  // OVERALL: a row has 'ngày' and something with 'tt gmv'
+  if(rows.some(r=>r.some(c=>low(c)==='ngày')&&r.some(c=>low(c).includes('tt gmv'))))return 'overall';
+  return null;
+}
+// urls can be: {overall,live,video} OR {list:[url,url,url]} for auto-detect
+async function loadAll(urls,showMsg){
+  const setMsg=(cls,t)=>{if(showMsg){const el=document.getElementById('cfgMsg');el.className='msg '+cls;el.textContent=t;}};
+  setStatus('load','Đang tải...');
+  dataOverall=[];dataLive=[];dataVideo=[];
+  try{
+    // gather list of urls to try
+    let list=[];
+    if(urls.list&&urls.list.length)list=urls.list.filter(Boolean);
+    else list=[urls.overall,urls.live,urls.video].filter(Boolean);
+    for(const u of list){
+      const rows=await fetchCSV(u);
+      if(rows.length<1)continue;
+      const type=detectType(rows);
+      if(type==='overall')dataOverall=dataOverall.concat(mapOverall(rows));
+      else if(type==='live')dataLive=dataLive.concat(mapLive(rows));
+      else if(type==='video')dataVideo=dataVideo.concat(mapVideo(rows));
+    }
+    const tot=dataOverall.length+dataLive.length+dataVideo.length;
+    if(tot===0){setStatus('err','Kết nối được nhưng chưa có data');setMsg('err','Đọc được Sheet nhưng chưa thấy dòng data nào. Kiểm tra đã điền data (từ dòng 2) và publish đúng sheet chưa.');}
+    else{setStatus('live',`Đã tải: ${dataOverall.length} overall · ${dataLive.length} live · ${dataVideo.length} video`);setMsg('ok',`Thành công! Overall ${dataOverall.length} · Live ${dataLive.length} · Video ${dataVideo.length} dòng.`);}
+    render();
+    return true;
+  }catch(e){
+    setStatus('err','Lỗi kết nối');
+    setMsg('err','Không đọc được Sheet. Nguyên nhân thường gặp: (1) link chưa phải link Publish CSV (phải có output=csv), (2) Sheet chưa publish công khai. Chi tiết: '+e.message);
+    return false;
+  }
+}
+async function fetchCSV(url){
+  const res=await fetch(url);
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const txt=await res.text();
+  if(txt.trim().startsWith('<')||txt.includes('<HTML'))throw new Error('Link trả về HTML, không phải CSV — kiểm tra lại link Publish to web dạng output=csv.');
+  return parseCSV(txt);
+}
+// ===== OVERALL: read the "CHI TIẾT THEO NGÀY" table (Ngày, TT GMV, SP GMV, FB NMV...) =====
+// row shape: [date, platform, gmv, nmv, ads, orders, imp, clicks, cancel%, gross, cancelGMV]
+function mapOverall(rows){
+  const hi=findRow(rows,r=>r.some(c=>low(c)==='ngày')&&r.some(c=>low(c).includes('tt gmv')));
+  if(hi<0)return[];
+  const H=rows[hi].map(low);
+  const col=n=>H.findIndex(h=>h.includes(n));
+  const ci={date:H.findIndex(h=>h==='ngày'),ttg:col('tt gmv'),ttn:col('tt nmv'),tta:col('tt ads'),
+    spg:col('sp gmv'),spn:col('sp nmv'),spa:col('sp ads'),fbn:col('fb nmv'),fba:col('fb ads')};
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i];const dcell=r[ci.date];
+    if(!dcell||low(dcell)==='tổng'||low(dcell)==='total')continue;
+    const date=normDate(dcell);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+    out.push([date,'TikTok',num(r[ci.ttg]),num(r[ci.ttn]),num(r[ci.tta]),0,0,0,0,0,0]);
+    out.push([date,'Shopee',num(r[ci.spg]),num(r[ci.spn]),num(r[ci.spa]),0,0,0,0,0,0]);
+    out.push([date,'Facebook',0,num(r[ci.fbn]),num(r[ci.fba]),0,0,0,0,0,0]);
+  }
+  return out;
+}
+// ===== LIVE: per-session table (DATE..Host..Attributed GMV..) =====
+// row shape: [date, platform, host, hours, customers, ads, gmv, ctr, ctor, aov, roi, achieve]
+function mapLive(rows){
+  const hi=findRow(rows,r=>r.some(c=>low(c)==='date')&&r.some(c=>low(c)==='host'));
+  if(hi<0)return[];
+  const H=rows[hi].map(low);
+  const col=n=>H.findIndex(h=>h===n),colc=n=>H.findIndex(h=>h.includes(n));
+  const ci={date:col('date'),host:col('host'),tl:col('timeline'),cust:col('customers'),
+    ads:col('ads'),gmv:colc('attributed gmv'),ctr:col('ctr'),ctor:col('ctor'),
+    aov:col('aov'),roi:col('roi'),ach:colc('achieve gmv')};
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i];const host=r[ci.host];
+    if(!host||low(host)==='total'||low(host)==='tổng')continue;
+    const date=normDate(r[ci.date]);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+    const gmv=num(r[ci.gmv]);if(gmv<=0)continue; // skip empty/future sessions
+    let h=0;const tm=String(r[ci.tl]||'').match(/(\d+)h(\d+)?/);if(tm)h=+tm[1]+(tm[2]?+tm[2]/60:0);
+    out.push([date,'TikTok',String(host).trim(),h,num(r[ci.cust]),num(r[ci.ads]),gmv,
+      num(r[ci.ctr]),num(r[ci.ctor]),num(r[ci.aov]),num(r[ci.roi]),num(r[ci.ach])]);
+  }
+  return out;
+}
+// ===== VIDEO: weekly report blocks (VIDEO / GMV VIDEO / BOOKING FEE sections) =====
+// returns objects: {month, week, vplan, vactual, gplan, gactual, bplan, bactual, kind}
+function mapVideo(rows){
+  const out=[];
+  for(let hi=0;hi<rows.length;hi++){
+    const H=rows[hi].map(low);
+    if(!(H.some(c=>c==='tuần')&&H.some(c=>c==='total plan')))continue;
+    const above=(rows[hi-1]||[]).map(low);
+    let sec='';const secOf=[];for(let i=0;i<Math.max(above.length,H.length);i++){if(above[i])sec=above[i];secOf[i]=sec;}
+    const idxTuan=H.findIndex(c=>c==='tuần'),idxMonth=H.findIndex(c=>c==='month');
+    const planCols=[],actualCols=[];
+    H.forEach((c,i)=>{if(c==='total plan')planCols.push(i);if(c==='total actual')actualCols.push(i);});
+    const map={video:{},gmv:{},booking:{}};
+    planCols.forEach(i=>{const s=secOf[i]||'';if(s.includes('gmv'))map.gmv.plan=i;else if(s.includes('booking'))map.booking.plan=i;else map.video.plan=i;});
+    actualCols.forEach(i=>{const s=secOf[i]||'';if(s.includes('gmv'))map.gmv.actual=i;else if(s.includes('booking'))map.booking.actual=i;else map.video.actual=i;});
+    for(let i=hi+1;i<rows.length;i++){const r=rows[i];const tuan=r[idxTuan],month=r[idxMonth];
+      const isWeek=/week\s*\d/i.test(String(tuan));
+      const isTotal=['total','est','tổng'].includes(low(tuan))||['total','est','tổng'].includes(low(month));
+      if(!isWeek&&!isTotal){if(!low(tuan)&&!low(month)&&!r.some(c=>String(c).trim()!==''))break;continue;}
+      out.push({month:String(month||'').trim()||null,week:String(tuan).trim(),
+        vplan:num(r[map.video.plan]),vactual:num(r[map.video.actual]),
+        gplan:num(r[map.gmv.plan]),gactual:num(r[map.gmv.actual]),
+        bplan:num(r[map.booking.plan]),bactual:num(r[map.booking.actual]),
+        kind:isTotal?low(tuan)||low(month):'week'});
+    }
+  }
+  return out;
+}
+
+/* ============ STATUS ============ */
+function setStatus(cls,txt){document.getElementById('statusDot').className='dot '+(cls==='load'?'':cls);document.getElementById('statusTxt').textContent=txt;}
+
+/* ============ FILTERS ============ */
+function months(rows,di){return[...new Set(rows.map(r=>monthOf(r[di||0])))].filter(Boolean).sort();}
+function filterRows(rows,platIdx){return rows.filter(r=>{
+  if(state.month!=='all'&&monthOf(r[0])!==state.month)return false;
+  if(state.plat!=='all'&&platIdx!==null&&r[platIdx]!==state.plat)return false;return true;});}
+function refreshMonths(){
+  const all=[...new Set([...months(dataOverall),...months(dataLive)])].sort();
+  const sel=document.getElementById('monthSel');const cur=state.month;
+  sel.innerHTML='<option value="all">Tất cả</option>'+all.map(m=>`<option value="${m}">${m}</option>`).join('');
+  sel.value=all.includes(cur)?cur:'all';state.month=sel.value;
+}
+
+/* ============ TABS/CTRL ============ */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');state.tab=t.dataset.tab;
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));document.getElementById('page-'+state.tab).classList.remove('hidden');
+  document.getElementById('platGrp').style.display=(state.tab==='video')?'none':'flex';render();});
+document.querySelectorAll('#platSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#platSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');state.plat=b.dataset.p;render();});
+document.getElementById('monthSel').onchange=e=>{state.month=e.target.value;render();};
+
+/* ============ RENDER ============ */
+function render(){destroyCharts();refreshMonths();
+  if(state.tab==='overall')renderOverall();else if(state.tab==='live')renderLive();else renderVideo();}
+
+function emptyMsg(el){el.innerHTML=`<div class="empty"><b>Chưa có data</b>Bấm "⚙ Kết nối Google Sheet" và dán link Publish CSV để bắt đầu.</div>`;}
+
+function renderOverall(){
+  const rows=filterRows(dataOverall,1);const el=document.getElementById('page-overall');
+  if(!rows.length){emptyMsg(el);return;}
+  const sum=i=>rows.reduce((a,r)=>a+(+r[i]||0),0);
+  const gmv=sum(2),nmv=sum(3),ads=sum(4),ord=sum(5),imp=sum(6),clk=sum(7);
+  const roas=ads?nmv/ads:0,adspct=nmv?ads/nmv:0,aov=ord?nmv/ord:0,ctr=imp?clk/imp:0,cvr=clk?ord/clk:0;
+  // cancel rate derived from GMV vs NMV: (GMV - NMV) / GMV. Only rows with GMV>0 (FB has no GMV, excluded).
+  let crWeighted='—';
+  const gRows=rows.filter(r=>+r[2]>0);
+  const gmvC=gRows.reduce((a,r)=>a+(+r[2]||0),0);
+  const nmvC=gRows.reduce((a,r)=>a+(+r[3]||0),0);
+  if(gmvC>0)crWeighted=fmtPct(Math.max(0,(gmvC-nmvC)/gmvC));
+  const kpis=[['GMV',fmtVND(gmv),'var(--ink)',''],['NMV',fmtVND(nmv),'var(--up)',''],['Chi phí Ads',fmtVND(ads),'var(--shopee)',''],
+    ['ROAS',roas.toFixed(2),'var(--fb)','NMV/Ads'],['Ads Cost %',fmtPct(adspct),'var(--neu)','trên NMV'],
+    ['Cancel Rate',crWeighted,'var(--dn)','(GMV-NMV)/GMV'],['AOV',ord?fmtVND(aov):'—','var(--video)',ord?'':'cần Orders'],
+    ['CTR',imp?fmtPct(ctr):'—','var(--tiktok)',imp?'':'cần Imp/Clicks']];
+  let html='<div class="kpis k8">'+kpis.map(k=>`<div class="kpi" style="--accent:${k[2]}"><div class="lb">${k[0]}</div><div class="vl">${k[1]}</div><div class="dt">${k[3]}</div></div>`).join('')+'</div>';
+  html+=`<div class="g31"><div class="card"><div class="ct">NMV &amp; Ads theo ngày <span class="hint">bar=NMV · line=Ads</span></div><div class="cw-lg"><canvas id="ovTrend"></canvas></div></div><div class="card"><div class="ct">Cơ cấu NMV theo sàn</div><div class="cw-lg"><canvas id="ovPie"></canvas></div></div></div>`;
+  html+=`<div class="g2"><div class="card"><div class="ct">ROAS theo ngày</div><div class="cw"><canvas id="ovRoas"></canvas></div></div><div class="card"><div class="ct">Cancel Rate % theo ngày</div><div class="cw"><canvas id="ovCancel"></canvas></div></div></div>`;
+  // platform table
+  const prows=filterRows(dataOverall,null);const byP={};['TikTok','Shopee','Facebook'].forEach(p=>byP[p]={gmv:0,nmv:0,ads:0});
+  prows.forEach(r=>{if(byP[r[1]]){byP[r[1]].gmv+=+r[2]||0;byP[r[1]].nmv+=+r[3]||0;byP[r[1]].ads+=+r[4]||0;}});
+  const tot={gmv:0,nmv:0,ads:0};Object.values(byP).forEach(v=>{tot.gmv+=v.gmv;tot.nmv+=v.nmv;tot.ads+=v.ads;});
+  html+=`<div class="card"><div class="ct">Chi tiết theo sàn</div><table><thead><tr><th>Sàn</th><th>GMV</th><th>NMV</th><th>Ads</th><th>ROAS</th><th>Ads%</th><th>Cancel%</th><th>%NMV</th><th>%Ngân sách</th></tr></thead><tbody>`;
+  ['TikTok','Shopee','Facebook'].forEach(p=>{const v=byP[p];const ro=v.ads?v.nmv/v.ads:0,ac=v.nmv?v.ads/v.nmv:0;const cr=v.gmv>0?Math.max(0,(v.gmv-v.nmv)/v.gmv):null;const pill=p==='TikTok'?'pill-tt':p==='Shopee'?'pill-sp':'pill-fb';
+    html+=`<tr><td><span class="pill ${pill}">${p}</span></td><td>${fmtNum(v.gmv)}</td><td>${fmtNum(v.nmv)}</td><td>${fmtNum(v.ads)}</td><td>${ro.toFixed(2)}</td><td>${fmtPct(ac)}</td><td>${cr==null?'—':fmtPct(cr)}</td><td>${tot.nmv?fmtPct(v.nmv/tot.nmv):'—'}</td><td>${tot.ads?fmtPct(v.ads/tot.ads):'—'}</td></tr>`;});
+  const totCr=tot.gmv>0?Math.max(0,(tot.gmv-tot.nmv)/tot.gmv):null;
+  html+=`<tr class="tot"><td>TỔNG</td><td>${fmtNum(tot.gmv)}</td><td>${fmtNum(tot.nmv)}</td><td>${fmtNum(tot.ads)}</td><td>${tot.ads?(tot.nmv/tot.ads).toFixed(2):'—'}</td><td>${tot.nmv?fmtPct(tot.ads/tot.nmv):'—'}</td><td>${totCr==null?'—':fmtPct(totCr)}</td><td>100%</td><td>100%</td></tr></tbody></table></div>`;
+  el.innerHTML=html;
+  // charts
+  const dates=[...new Set(rows.map(r=>r[0]))].sort();const gd={};dates.forEach(d=>gd[d]={nmv:0,ads:0,gmvC:0,nmvC:0});
+  rows.forEach(r=>{if(gd[r[0]]){gd[r[0]].nmv+=+r[3]||0;gd[r[0]].ads+=+r[4]||0;if(+r[2]>0){gd[r[0]].gmvC+=+r[2];gd[r[0]].nmvC+=+r[3]||0;}}});
+  const lbl=dates.map(d=>d.slice(5));
+  charts.ovTrend=new Chart(document.getElementById('ovTrend'),{data:{labels:lbl,datasets:[{type:'bar',label:'NMV',data:dates.map(d=>gd[d].nmv),backgroundColor:'#c7d2fe',borderRadius:3,yAxisID:'y'},{type:'line',label:'Ads',data:dates.map(d=>gd[d].ads),borderColor:'#ee4d2d',borderWidth:2,pointRadius:2,tension:.35,yAxisID:'y1'}]},options:chartOpts(true)});
+  charts.ovPie=new Chart(document.getElementById('ovPie'),{type:'doughnut',data:{labels:['TikTok','Shopee','Facebook'],datasets:[{data:['TikTok','Shopee','Facebook'].map(p=>byP[p].nmv),backgroundColor:[PCOL.TikTok,PCOL.Shopee,PCOL.Facebook],borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}},cutout:'55%',maintainAspectRatio:false}});
+  charts.ovRoas=new Chart(document.getElementById('ovRoas'),{data:{labels:lbl,datasets:[{type:'line',label:'ROAS',data:dates.map(d=>gd[d].ads?gd[d].nmv/gd[d].ads:0),borderColor:'#1877f2',backgroundColor:'rgba(24,119,242,.08)',fill:true,borderWidth:2,pointRadius:2,tension:.35}]},options:chartOpts(false)});
+  charts.ovCancel=new Chart(document.getElementById('ovCancel'),{data:{labels:lbl,datasets:[{type:'line',label:'Cancel%',data:dates.map(d=>gd[d].gmvC>0?Math.max(0,(gd[d].gmvC-gd[d].nmvC)/gd[d].gmvC*100):0),borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.08)',fill:true,borderWidth:2,pointRadius:2,tension:.35}]},options:chartOpts(false)});
+}
+
+function renderLive(){
+  const rows=filterRows(dataLive,1);const el=document.getElementById('page-live');
+  if(!rows.length){emptyMsg(el);return;}
+  const sum=i=>rows.reduce((a,r)=>a+(+r[i]||0),0);
+  const sessions=rows.length,hours=sum(3),cust=sum(4),ads=sum(5),gmv=sum(6);const roi=ads?gmv/ads:0,revh=hours?gmv/hours:0;
+  const avgCtr=rows.length?rows.reduce((a,r)=>a+(+r[7]||0),0)/rows.length:0;
+  const avgAov=rows.length?rows.reduce((a,r)=>a+(+r[9]||0),0)/rows.length:0;
+  const kpis=[['Sessions',fmtNum(sessions),'var(--live)',''],['GMV',fmtVND(gmv),'var(--ink)',''],['Chi phí Ads',fmtVND(ads),'var(--shopee)',''],['ROI',roi.toFixed(2),'var(--up)','GMV/Ads'],['GMV/giờ',fmtVND(revh),'var(--fb)',hours.toFixed(1)+'h'],['Khách',fmtNum(cust),'var(--video)',''],['CTR TB',avgCtr.toFixed(2)+'%','var(--tiktok)',''],['AOV TB',fmtVND(avgAov),'var(--neu)','']];
+  let html='<div class="kpis k8">'+kpis.map(k=>`<div class="kpi" style="--accent:${k[2]}"><div class="lb">${k[0]}</div><div class="vl">${k[1]}</div><div class="dt">${k[3]}</div></div>`).join('')+'</div>';
+  html+=`<div class="g31"><div class="card"><div class="ct">GMV &amp; ROI theo ngày <span class="hint">bar=GMV · line=ROI</span></div><div class="cw-lg"><canvas id="lvTrend"></canvas></div></div><div class="card"><div class="ct">GMV theo Host</div><div class="cw-lg"><canvas id="lvHostPie"></canvas></div></div></div>`;
+  const byH={};rows.forEach(r=>{const h=r[2]||'—';if(!byH[h])byH[h]={s:0,hr:0,cust:0,ads:0,gmv:0};byH[h].s++;byH[h].hr+=+r[3]||0;byH[h].cust+=+r[4]||0;byH[h].ads+=+r[5]||0;byH[h].gmv+=+r[6]||0;});
+  const hostList=Object.entries(byH).sort((a,b)=>b[1].gmv-a[1].gmv);
+  html+=`<div class="card"><div class="ct">Performance theo Host</div><table><thead><tr><th>Host</th><th>Sessions</th><th>Giờ</th><th>Khách</th><th>Ads</th><th>GMV</th><th>ROI</th><th>GMV/giờ</th></tr></thead><tbody>`;
+  hostList.forEach(([h,v])=>{html+=`<tr><td>${h}</td><td>${v.s}</td><td>${v.hr.toFixed(1)}</td><td>${fmtNum(v.cust)}</td><td>${fmtNum(v.ads)}</td><td>${fmtNum(v.gmv)}</td><td>${v.ads?(v.gmv/v.ads).toFixed(2):'—'}</td><td>${v.hr?fmtVND(v.gmv/v.hr):'—'}</td></tr>`;});
+  html+=`<tr class="tot"><td>TỔNG</td><td>${sessions}</td><td>${hours.toFixed(1)}</td><td>${fmtNum(cust)}</td><td>${fmtNum(ads)}</td><td>${fmtNum(gmv)}</td><td>${roi.toFixed(2)}</td><td>${fmtVND(revh)}</td></tr></tbody></table></div>`;
+  const wd=['CN','T2','T3','T4','T5','T6','T7'];const byW={};wd.forEach(w=>byW[w]={gmv:0});
+  rows.forEach(r=>{const dt=new Date(r[0]);if(!isNaN(dt))byW[wd[dt.getDay()]].gmv+=+r[6]||0;});
+  html+=`<div class="g2"><div class="card"><div class="ct">GMV theo thứ trong tuần</div><div class="cw"><canvas id="lvWeekday"></canvas></div></div><div class="card"><div class="ct">Session detail</div><div class="cw" style="overflow:auto;height:180px;"><table><thead><tr><th>Ngày</th><th>Host</th><th>Giờ</th><th>Ads</th><th>GMV</th><th>ROI</th></tr></thead><tbody>`;
+  rows.slice().sort((a,b)=>a[0]<b[0]?1:-1).forEach(r=>{html+=`<tr><td>${r[0].slice(5)}</td><td>${r[2]}</td><td>${(+r[3]).toFixed(1)}</td><td>${fmtNum(r[5])}</td><td>${fmtNum(r[6])}</td><td>${r[5]?(r[6]/r[5]).toFixed(2):'—'}</td></tr>`;});
+  html+='</tbody></table></div></div></div>';el.innerHTML=html;
+  const dates=[...new Set(rows.map(r=>r[0]))].sort();const dd={};dates.forEach(d=>dd[d]={gmv:0,ads:0});rows.forEach(r=>{dd[r[0]].gmv+=+r[6]||0;dd[r[0]].ads+=+r[5]||0;});
+  charts.lvTrend=new Chart(document.getElementById('lvTrend'),{data:{labels:dates.map(d=>d.slice(5)),datasets:[{type:'bar',label:'GMV',data:dates.map(d=>dd[d].gmv),backgroundColor:'#f9a8d4',borderRadius:3,yAxisID:'y'},{type:'line',label:'ROI',data:dates.map(d=>dd[d].ads?dd[d].gmv/dd[d].ads:0),borderColor:'#d6336c',borderWidth:2,pointRadius:2,tension:.35,yAxisID:'y1'}]},options:chartOpts(true)});
+  charts.lvHostPie=new Chart(document.getElementById('lvHostPie'),{type:'doughnut',data:{labels:hostList.map(h=>h[0]),datasets:[{data:hostList.map(h=>h[1].gmv),backgroundColor:hostList.map((_,i)=>HCOL[i%HCOL.length]),borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6}}},cutout:'55%',maintainAspectRatio:false}});
+  charts.lvWeekday=new Chart(document.getElementById('lvWeekday'),{type:'bar',data:{labels:wd,datasets:[{label:'GMV',data:wd.map(w=>byW[w].gmv),backgroundColor:'#d6336c',borderRadius:3}]},options:chartOpts(false)});
+}
+
+function renderVideo(){
+  // dataVideo = array of {month,week,vplan,vactual,gplan,gactual,bplan,bactual,kind}
+  const all=dataVideo;const el=document.getElementById('page-video');
+  if(!all.length){emptyMsg(el);return;}
+  const weeks=all.filter(x=>x.kind==='week');
+  const totals=all.filter(x=>x.kind==='total'); // TOTAL rows (per month)
+  // KPI = sum of TOTAL rows if present, else sum of weeks
+  const base=totals.length?totals:weeks;
+  const sum=k=>base.reduce((a,x)=>a+(+x[k]||0),0);
+  const vP=sum('vplan'),vA=sum('vactual'),gP=sum('gplan'),gA=sum('gactual'),bP=sum('bplan'),bA=sum('bactual');
+  const kpis=[
+    ['Video Plan',fmtNum(vP),'var(--video)',''],
+    ['Video Actual',fmtNum(vA),'var(--up)',vP?fmtPct(vA/vP)+' đạt':''],
+    ['GMV Video Plan',fmtVND(gP),'var(--neu)',''],
+    ['GMV Video Actual',fmtVND(gA),'var(--ink)',gP?fmtPct(gA/gP)+' đạt':''],
+    ['Booking Fee Plan',fmtVND(bP),'var(--shopee)',''],
+    ['Booking Fee Actual',fmtVND(bA),'var(--live)',''],
+  ];
+  let html='<div class="kpis k6">'+kpis.map(k=>`<div class="kpi" style="--accent:${k[2]}"><div class="lb">${k[0]}</div><div class="vl">${k[1]}</div><div class="dt">${k[3]}</div></div>`).join('')+'</div>';
+  html+=`<div class="g2">
+    <div class="card"><div class="ct">Số video: Plan vs Actual theo tuần</div><div class="cw-lg"><canvas id="vdVideo"></canvas></div></div>
+    <div class="card"><div class="ct">GMV Video: Plan vs Actual theo tuần</div><div class="cw-lg"><canvas id="vdGmv"></canvas></div></div>
+  </div>`;
+  // weekly table
+  html+=`<div class="card"><div class="ct">Chi tiết theo tuần</div><table><thead><tr><th>Tháng</th><th>Tuần</th><th>Video Plan</th><th>Video Actual</th><th>% đạt</th><th>GMV Plan</th><th>GMV Actual</th><th>% đạt</th><th>Booking Actual</th></tr></thead><tbody>`;
+  let curMonth='';
+  all.forEach(x=>{
+    const isTot=x.kind!=='week';
+    const mlabel=x.month&&x.month!==curMonth?(curMonth=x.month,x.month):'';
+    const vpct=x.vplan?fmtPct(x.vactual/x.vplan):'—';const gpct=x.gplan?fmtPct(x.gactual/x.gplan):'—';
+    html+=`<tr class="${isTot?'tot':''}"><td>${mlabel}</td><td>${x.week}</td><td>${fmtNum(x.vplan)}</td><td>${fmtNum(x.vactual)}</td><td>${vpct}</td><td>${fmtNum(x.gplan)}</td><td>${fmtNum(x.gactual)}</td><td>${gpct}</td><td>${x.bactual?fmtNum(x.bactual):'—'}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+  // charts (weeks only)
+  const wl=weeks.map(x=>(x.month?x.month.split(' ')[0]+' ':'')+x.week);
+  charts.vdVideo=new Chart(document.getElementById('vdVideo'),{type:'bar',data:{labels:wl,datasets:[
+    {label:'Plan',data:weeks.map(x=>x.vplan),backgroundColor:'#c4b5fd',borderRadius:3},
+    {label:'Actual',data:weeks.map(x=>x.vactual),backgroundColor:'#7c3aed',borderRadius:3}
+  ]},options:chartOpts(true)});
+  charts.vdGmv=new Chart(document.getElementById('vdGmv'),{data:{labels:wl,datasets:[
+    {type:'bar',label:'GMV Plan',data:weeks.map(x=>x.gplan),backgroundColor:'#fde68a',borderRadius:3},
+    {type:'bar',label:'GMV Actual',data:weeks.map(x=>x.gactual),backgroundColor:'#d97706',borderRadius:3}
+  ]},options:chartOpts(true)});
+}
+
+function chartOpts(dual){const o={maintainAspectRatio:false,plugins:{legend:{display:dual,position:'top',labels:{font:{size:10},boxWidth:12,padding:8}}},scales:{y:{beginAtZero:true,ticks:{font:{size:9},callback:v=>fmtVND(v)},grid:{color:'#f1f2f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}};if(dual)o.scales.y1={position:'right',beginAtZero:true,ticks:{font:{size:9}},grid:{display:false}};return o;}
+
+/* ============ CONFIG MODAL ============ */
+const cfgModal=document.getElementById('cfgModal');
+document.getElementById('btnCfg').onclick=()=>{const s=loadUrls();document.getElementById('urlOverall').value=s.overall||'';document.getElementById('urlLive').value=s.live||'';document.getElementById('urlVideo').value=s.video||'';document.getElementById('cfgMsg').className='msg';cfgModal.classList.add('on');};
+document.getElementById('cfgX').onclick=()=>cfgModal.classList.remove('on');
+cfgModal.onclick=e=>{if(e.target===cfgModal)cfgModal.classList.remove('on');};
+document.getElementById('cfgSave').onclick=async()=>{
+  const urls={overall:document.getElementById('urlOverall').value.trim(),live:document.getElementById('urlLive').value.trim(),video:document.getElementById('urlVideo').value.trim()};
+  if(!urls.overall&&!urls.live&&!urls.video){const el=document.getElementById('cfgMsg');el.className='msg err';el.textContent='Dán ít nhất 1 link.';return;}
+  saveUrls(urls);const ok=await loadAll(urls,true);if(ok)setTimeout(()=>cfgModal.classList.remove('on'),1200);
+};
+document.getElementById('cfgClear').onclick=()=>{try{localStorage.removeItem(LS_KEY);}catch(e){}document.getElementById('urlOverall').value='';document.getElementById('urlLive').value='';document.getElementById('urlVideo').value='';const el=document.getElementById('cfgMsg');el.className='msg ok';el.textContent='Đã xóa link đã lưu (dùng lại link ghim sẵn).';};
+document.getElementById('btnReload').onclick=()=>{loadAll(activeUrls(),false);};
+
+function saveUrls(u){try{localStorage.setItem(LS_KEY,JSON.stringify(u));}catch(e){}}
+function loadUrls(){try{return JSON.parse(localStorage.getItem(LS_KEY))||{};}catch(e){return{};}}
+
+/* ============ PINNED URLS (ghim sẵn — ai mở cũng thấy data) ============ */
+const PINNED_URLS=[
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=0&single=true&output=csv",
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=467964102&single=true&output=csv",
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=206601074&single=true&output=csv"
+];
+// user-pasted links (localStorage) override pinned if present
+function activeUrls(){
+  const s=loadUrls();
+  const custom=[s.overall,s.live,s.video].filter(Boolean);
+  if(custom.length)return {list:custom};
+  return {list:PINNED_URLS};
+}
+
+/* ============ INIT ============ */
+(function init(){
+  render(); // shows empty state first
+  loadAll(activeUrls(),false); // auto-load pinned (or custom) on open
+})();
+</script>
+</body>
+</html>
