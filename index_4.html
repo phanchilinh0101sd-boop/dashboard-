@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TikTok Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--ink:#151a2e;--ink2:#2b3350;--paper:#f4f5f8;--card:#fff;--tiktok:#111827;--tt2:#25f4ee;--live:#d6336c;--video:#7c3aed;--up:#16a34a;--dn:#dc2626;--neu:#d97706;--line:#e7e9f0;--muted:#8b93a7;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:12.5px;}
+.wrap{max-width:1400px;margin:0 auto;padding:14px;}
+.top{background:var(--ink);color:#fff;border-radius:10px 10px 0 0;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.top h1{font-size:19px;font-weight:800;letter-spacing:-.3px;}
+.top .sub{font-size:10.5px;color:#a9b0c7;margin-top:2px;}
+.tabs{display:flex;gap:4px;}
+.tab{padding:7px 16px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.08);color:#c3c9dc;transition:.15s;}
+.tab:hover{background:rgba(255,255,255,.16);}
+.tab.on{background:#fff;color:var(--ink);}
+.ctrl{background:var(--card);border-bottom:2px solid var(--line);padding:9px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+.ctrl .grp{display:flex;flex-direction:column;gap:2px;}
+.ctrl label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.ctrl select{border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px;background:#fafbfc;color:var(--ink);font-weight:600;cursor:pointer;}
+.spacer{flex:1;}
+.btn-data{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:6px 14px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;}
+.btn-ghost{border:1px solid var(--line);background:#fff;color:var(--ink);padding:6px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;}
+.status-dot{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted);max-width:400px;overflow:hidden;text-overflow:ellipsis;}
+.dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1;flex-shrink:0;}.dot.live{background:var(--up);}.dot.err{background:var(--dn);}
+.page{padding:14px 0;}.hidden{display:none;}
+.kpis{display:grid;gap:9px;margin-bottom:14px;}
+.k4{grid-template-columns:repeat(4,1fr);}.k5{grid-template-columns:repeat(5,1fr);}.k6{grid-template-columns:repeat(6,1fr);}.k8{grid-template-columns:repeat(4,1fr);}
+@media(max-width:900px){.k4,.k5,.k6,.k8{grid-template-columns:repeat(2,1fr);}}
+.kpi{background:var(--card);border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(20,26,46,.06);border:1px solid var(--line);position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--ink));}
+.kpi .lb{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.kpi .vl{font-size:23px;font-weight:800;color:var(--ink);line-height:1.15;margin:3px 0 2px;letter-spacing:-.5px;}
+.kpi .dt{font-size:10px;color:var(--muted);}
+.up{color:var(--up);font-weight:700;}.dn{color:var(--dn);font-weight:700;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.g31{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:14px;}
+@media(max-width:900px){.g2,.g31{grid-template-columns:1fr;}}
+.card{background:var(--card);border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(20,26,46,.06);border:1px solid var(--line);}
+.card .ct{font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.ct .hint{font-size:9px;font-weight:600;color:var(--muted);text-transform:none;}
+.cw{position:relative;height:150px;}.cw-lg{position:relative;height:180px;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:var(--ink);color:#fff;padding:7px 8px;text-align:right;font-weight:600;white-space:nowrap;font-size:10px;}th:first-child{text-align:left;}
+td{padding:5px 8px;text-align:right;border-bottom:1px solid #f1f2f6;white-space:nowrap;}td:first-child{text-align:left;font-weight:600;}
+tbody tr:hover{background:#f8fafc;}
+tr.tot{background:#eef2ff;font-weight:800;}tr.tot td{border-bottom:none;}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:13px;}.empty b{display:block;font-size:15px;color:var(--ink);margin-bottom:8px;}
+.foot{text-align:center;padding:14px;font-size:10px;color:var(--muted);}
+.ctrl input[type=date]{border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;background:#fafbfc;color:var(--ink);font-weight:600;cursor:pointer;}
+.quick-btns{display:flex;gap:3px;flex-wrap:wrap;}
+.qb{border:1px solid var(--line);background:#fafbfc;padding:3px 10px;border-radius:5px;font-size:10.5px;font-weight:600;cursor:pointer;color:var(--muted);}
+.qb:hover{background:#eef0f5;}.qb.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.cmp{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:11px;color:#166534;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.cmp b{font-weight:800;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>TikTok Performance Dashboard</h1><div class="sub">Video · Shoptab · Livestream — source breakdown + Plan vs Actual</div></div>
+    <div class="tabs">
+      <button class="tab on" data-tab="overall">Overall</button>
+      <button class="tab" data-tab="live">Livestream</button>
+      <button class="tab" data-tab="video">Video</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <div class="grp"><label>Từ ngày</label><input type="date" id="dateFrom"></div>
+    <div class="grp"><label>Đến ngày</label><input type="date" id="dateTo"></div>
+    <div class="grp"><label>Nhanh</label>
+      <div class="quick-btns">
+        <button class="qb" data-q="7d">7 ngày</button>
+        <button class="qb" data-q="30d">30 ngày</button>
+        <button class="qb" data-q="thisM">Tháng này</button>
+        <button class="qb" data-q="lastM">Tháng trước</button>
+        <button class="qb" data-q="thisW">Tuần này</button>
+        <button class="qb on" data-q="all">Tất cả</button>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <span class="status-dot"><span class="dot" id="statusDot"></span><span id="statusTxt">Đang tải...</span></span>
+    <button class="btn-ghost" id="btnReload">↻ Tải lại</button>
+  </div>
+  <div class="page" id="page-overall"></div>
+  <div class="page hidden" id="page-live"></div>
+  <div class="page hidden" id="page-video"></div>
+  <div class="foot">Dashboard TikTok — đọc từ Google Sheet. Sửa Sheet → bấm Tải lại → cập nhật.</div>
+</div>
+<script>
+/* ============ DATA ============ */
+let dataSource=[], dataLive=[], dataVideo=[], dataPlan=[];
+let state={tab:'overall',from:'',to:''};
+let charts={};
+
+/* ============ DATE RANGE + COMPARISON ============ */
+function today(){return new Date().toISOString().slice(0,10);}
+function addDays(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt.toISOString().slice(0,10);}
+function firstOfMonth(d){return d.slice(0,8)+'01';}
+function lastOfMonth(d){const dt=new Date(d);dt.setMonth(dt.getMonth()+1,0);return dt.toISOString().slice(0,10);}
+function mondayOfWeek(d){const dt=new Date(d);const day=dt.getDay()||7;dt.setDate(dt.getDate()-(day-1));return dt.toISOString().slice(0,10);}
+function setRange(from,to){
+  state.from=from;state.to=to;
+  document.getElementById('dateFrom').value=from;document.getElementById('dateTo').value=to;
+  document.querySelectorAll('.qb').forEach(b=>b.classList.remove('on'));
+  render();
+}
+function comparisonPeriod(){
+  if(!state.from||!state.to)return null;
+  const days=Math.round((new Date(state.to)-new Date(state.from))/864e5)+1;
+  // same-length period immediately before
+  const cmpTo=addDays(state.from,-1);
+  const cmpFrom=addDays(state.from,-days);
+  return{from:cmpFrom,to:cmpTo,days,label:`${cmpFrom.slice(5)} → ${cmpTo.slice(5)}`};
+}
+function filterByDate(data,dateKey){
+  if(!state.from&&!state.to)return data;
+  return data.filter(r=>{const d=typeof dateKey==='function'?dateKey(r):r[dateKey];
+    if(state.from&&d<state.from)return false;if(state.to&&d>state.to)return false;return true;});
+}
+function filterByDateRange(data,dateKey,from,to){
+  return data.filter(r=>{const d=typeof dateKey==='function'?dateKey(r):r[dateKey];
+    if(from&&d<from)return false;if(to&&d>to)return false;return true;});
+}
+function calcGrowth(current,previous){if(!previous||previous===0)return null;return(current-previous)/Math.abs(previous);}
+function growthHtml(cur,prev,inverse){
+  const g=calcGrowth(cur,prev);if(g==null)return'';
+  const pct=(g*100).toFixed(1);const up=g>=0;const good=inverse?!up:up;
+  return `<span class="${good?'up':'dn'}">${up?'▲':'▼'} ${up?'+':''}${pct}%</span>`;
+}
+// Quick buttons
+document.querySelectorAll('.qb').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.qb').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  const t=today(),q=b.dataset.q;
+  if(q==='7d')setRange(addDays(t,-6),t);
+  else if(q==='30d')setRange(addDays(t,-29),t);
+  else if(q==='thisM')setRange(firstOfMonth(t),t);
+  else if(q==='lastM'){const pm=addDays(firstOfMonth(t),-1);setRange(firstOfMonth(pm),pm);}
+  else if(q==='thisW')setRange(mondayOfWeek(t),t);
+  else if(q==='all'){state.from='';state.to='';document.getElementById('dateFrom').value='';document.getElementById('dateTo').value='';render();}
+});
+document.getElementById('dateFrom').onchange=()=>{state.from=document.getElementById('dateFrom').value;render();};
+document.getElementById('dateTo').onchange=()=>{state.to=document.getElementById('dateTo').value;render();};
+
+/* ============ URLS ============ */
+const URLS={
+  plan:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=29240632&single=true&output=csv",
+  source:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=582634795&single=true&output=csv",
+  video:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=467964102&single=true&output=csv",
+  live:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=206601074&single=true&output=csv"
+};
+
+/* ============ HELPERS ============ */
+const fmtVND=v=>v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':Math.round(v).toString();
+const fmtNum=v=>new Intl.NumberFormat('vi-VN').format(Math.round(v));
+const fmtPct=v=>(v*100).toFixed(1)+'%';
+function normDate(d){if(!d)return'';d=String(d).trim();
+  let m=d.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m=d.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  m=d.match(/^(\d{1,2})\/(\d{1,2})$/);if(m)return `${new Date().getFullYear()}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return d;}
+const monthOf=d=>normDate(d).slice(0,7);
+function num(x){if(x==null||x==='')return 0;let s=String(x).trim();if(/#(div|ref|n\/a|value)/i.test(s))return 0;s=s.replace(/[₫đ%\s]/g,'');
+  if(s.indexOf(',')>=0&&s.indexOf('.')>=0){s=s.replace(/\./g,'').replace(',','.');}
+  else if((s.match(/\./g)||[]).length>1){s=s.replace(/\./g,'');}
+  else if(/^\-?\d{1,3}\.\d{3}$/.test(s)){s=s.replace(/\./g,'');}
+  else s=s.replace(/,/g,'');
+  const n=parseFloat(s.replace(/[^\d.\-]/g,''));return isNaN(n)?0:n;}
+function low(x){return String(x==null?'':x).trim().toLowerCase();}
+function findRow(rows,pred){for(let i=0;i<rows.length;i++)if(pred(rows[i]))return i;return -1;}
+function destroyCharts(){Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};}
+const SCOL=['#7c3aed','#0ea5e9','#d6336c','#f59e0b','#16a34a'];
+const HCOL=['#d6336c','#7c3aed','#0ea5e9','#f59e0b','#16a34a','#e11d48','#0891b2'];
+
+/* ============ CSV PARSE ============ */
+function parseCSV(text){
+  const firstLine=text.split('\n')[0]||'';
+  const delim=firstLine.includes('\t')?'\t':firstLine.split(';').length>firstLine.split(',').length?';':',';
+  const rows=[];let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}
+    else{if(c==='"')q=true;else if(c===delim){row.push(cur);cur='';}
+      else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';}
+      else if(c==='\r'){}else cur+=c;}}
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows;}
+async function fetchCSV(url){
+  const res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);
+  let txt=await res.text();txt=txt.replace(/^\ufeff/,'');
+  if(txt.trim().startsWith('<'))throw new Error('HTML response');
+  return parseCSV(txt);}
+
+/* ============ PARSERS (hardcoded per sheet type — no auto-detect needed) ============ */
+// SOURCE: Date|Source|GMV|NMV|Orders (no Ads column)
+function parseSource(rows){
+  const hi=findRow(rows,r=>r.some(c=>low(c)==='source'||low(c)==='date'));
+  if(hi<0)return[];
+  const H=rows[hi].map(low);
+  const ci={date:H.findIndex(h=>h==='date'||h==='ngày'),source:H.findIndex(h=>h==='source'),
+    gmv:H.findIndex(h=>h==='gmv'),nmv:H.findIndex(h=>h==='nmv'),
+    ads:H.findIndex(h=>h==='ads'),orders:H.findIndex(h=>h==='orders'||h==='order')};
+  if(ci.date<0||ci.source<0)return[];
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i];if(!r||!r[ci.date])continue;
+    const date=normDate(r[ci.date]);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+    const src=String(r[ci.source]||'').trim();if(!src)continue;
+    out.push({date,source:src,gmv:ci.gmv>=0?num(r[ci.gmv]):0,nmv:ci.nmv>=0?num(r[ci.nmv]):0,
+      ads:ci.ads>=0?num(r[ci.ads]):0,orders:ci.orders>=0?num(r[ci.orders]):0});}
+  return out;}
+
+// LIVE: DATE|...|Host|Timeline|Customers|...|ADS|...|Attributed GMV|ROI|ACHIEVE%
+function parseLive(rows){
+  const hi=findRow(rows,r=>r.some(c=>low(c)==='date')&&r.some(c=>low(c)==='host'));
+  if(hi<0)return[];
+  const H=rows[hi].map(low);
+  const col=n=>H.findIndex(h=>h===n),colc=n=>H.findIndex(h=>h.includes(n));
+  const ci={date:col('date'),host:col('host'),tl:col('timeline'),cust:col('customers'),
+    ads:col('ads'),gmv:colc('attributed gmv'),ctr:col('ctr'),ctor:col('ctor'),
+    aov:col('aov'),roi:col('roi'),ach:colc('achieve gmv')};
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i];const host=r[ci.host];
+    if(!host||low(host)==='total'||low(host)==='tổng')continue;
+    const date=normDate(r[ci.date]);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+    let h=0;const tm=String(r[ci.tl]||'').match(/(\d+)h(\d+)?/);if(tm)h=+tm[1]+(tm[2]?+tm[2]/60:0);
+    out.push({date,host:String(host).trim(),hours:h,cust:num(r[ci.cust]),ads:num(r[ci.ads]),
+      gmv:ci.gmv>=0?num(r[ci.gmv]):0,ctr:num(r[ci.ctr]),ctor:num(r[ci.ctor]),aov:num(r[ci.aov]),roi:num(r[ci.roi]),ach:num(r[ci.ach])});}
+  return out;}
+
+// VIDEO: weekly blocks with TIME|VIDEO|GMV VIDEO|BOOKING FEE
+function parseVideo(rows){
+  const out=[];
+  for(let hi=0;hi<rows.length;hi++){
+    const H=rows[hi].map(low);
+    if(!(H.some(c=>c==='tuần'||c==='tuáº§n')&&H.some(c=>c==='total plan')))continue;
+    const above=(rows[hi-1]||[]).map(low);
+    let sec='';const secOf=[];for(let i=0;i<Math.max(above.length,H.length);i++){if(above[i])sec=above[i];secOf[i]=sec;}
+    const idxTuan=H.findIndex(c=>c==='tuần'||c==='tuáº§n'),idxMonth=H.findIndex(c=>c==='month');
+    const planCols=[],actualCols=[];
+    H.forEach((c,i)=>{if(c==='total plan')planCols.push(i);if(c==='total actual'||c==='total actu')actualCols.push(i);});
+    const map={video:{},gmv:{},booking:{}};
+    planCols.forEach(i=>{const s=secOf[i]||'';if(s.includes('gmv'))map.gmv.plan=i;else if(s.includes('booking'))map.booking.plan=i;else map.video.plan=i;});
+    actualCols.forEach(i=>{const s=secOf[i]||'';if(s.includes('gmv'))map.gmv.actual=i;else if(s.includes('booking'))map.booking.actual=i;else map.video.actual=i;});
+    for(let i=hi+1;i<rows.length;i++){const r=rows[i];const tuan=r[idxTuan],month=r[idxMonth];
+      const isWeek=/week\s*\d/i.test(String(tuan));
+      const isTotal=['total','est','tổng'].includes(low(tuan))||['total','est','tổng'].includes(low(month));
+      if(!isWeek&&!isTotal){if(!low(tuan)&&!low(month)&&!r.some(c=>String(c).trim()!==''))break;continue;}
+      out.push({month:String(month||'').trim()||null,week:String(tuan).trim(),
+        vplan:num(r[map.video.plan]),vactual:num(r[map.video.actual]),
+        gplan:num(r[map.gmv.plan]),gactual:num(r[map.gmv.actual]),
+        bplan:num(r[map.booking?.plan]),bactual:num(r[map.booking?.actual]),
+        kind:isTotal?low(tuan)||low(month):'week'});}}
+  return out;}
+
+// PLAN: complex layout — read TikTok section only
+function parsePlan(rows){
+  const out=[];
+  // find row with TikTok section header
+  for(let ri=0;ri<Math.min(rows.length,5);ri++){
+    const r=rows[ri];const ttCol=r.findIndex(c=>low(c).includes('tiktok'));
+    if(ttCol<0)continue;
+    // header row is next
+    const hdrRow=rows[ri+1]||[];const H=hdrRow.map(low);
+    // find TikTok column range (until next section or end)
+    let endCol=H.length;
+    for(let c=ttCol+1;c<r.length;c++){if(low(r[c]).includes('shoppe')||low(r[c]).includes('shopee')||low(r[c]).includes('facebook')){endCol=c;break;}}
+    // map columns within TikTok range
+    const findC=(names)=>{for(let c=ttCol;c<endCol;c++){const v=low(hdrRow[c]);for(const n of names)if(v.includes(n))return c;}return -1;};
+    const ci={date:findC(['ng','date','ngay']),gmvLive:findC(['gmv live']),adsLive:findC(['ads live']),
+      gmvVideo:findC(['gmv video','gmv vide']),gmvShoptab:findC(['gmv shop']),
+      totalGmv:findC(['tong gmv','tổng gmv','total gmv']),totalAds:findC(['tong ads','tổng ads','total ads'])};
+    // read data rows
+    for(let di=ri+2;di<rows.length;di++){
+      const dr=rows[di];if(!dr)continue;
+      const dateRaw=ci.date>=0?String(dr[ci.date]||'').trim():'';
+      if(!dateRaw||low(dateRaw)==='total'||low(dateRaw)==='tổng')continue;
+      const date=normDate(dateRaw);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+      const autoM=v=>{const n=num(v);return(n>0&&n<10000)?n*1000000:n;}; // plan in triệu → convert
+      if(ci.gmvLive>=0)out.push({date,source:'live',gmvPlan:autoM(dr[ci.gmvLive]),adsPlan:ci.adsLive>=0?autoM(dr[ci.adsLive]):0});
+      if(ci.gmvVideo>=0)out.push({date,source:'video',gmvPlan:autoM(dr[ci.gmvVideo]),adsPlan:0});
+      if(ci.gmvShoptab>=0)out.push({date,source:'shoptab',gmvPlan:autoM(dr[ci.gmvShoptab]),adsPlan:0});}
+    break;}
+  return out;}
+
+/* ============ LOAD ALL ============ */
+async function loadAll(){
+  setStatus('load','Đang tải...');
+  dataSource=[];dataLive=[];dataVideo=[];dataPlan=[];
+  const results={};
+  for(const [key,url] of Object.entries(URLS)){
+    try{
+      const rows=await fetchCSV(url);
+      if(key==='source')dataSource=parseSource(rows);
+      else if(key==='live')dataLive=parseLive(rows);
+      else if(key==='video')dataVideo=parseVideo(rows);
+      else if(key==='plan')dataPlan=parsePlan(rows);
+      results[key]=key==='source'?dataSource.length:key==='live'?dataLive.length:key==='video'?dataVideo.length:dataPlan.length;
+    }catch(e){results[key]='ERR:'+e.message;}
+  }
+  const tot=dataSource.length+dataLive.length+dataVideo.length;
+  const statusParts=Object.entries(results).map(([k,v])=>`${k}:${v}`).join(' · ');
+  if(tot>0)setStatus('live',statusParts);
+  else setStatus('err','Lỗi — '+statusParts);
+  render();}
+
+function setStatus(cls,txt){document.getElementById('statusDot').className='dot '+(cls==='load'?'':cls);document.getElementById('statusTxt').textContent=txt;}
+
+/* ============ TABS ============ */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');state.tab=t.dataset.tab;
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));document.getElementById('page-'+state.tab).classList.remove('hidden');render();});
+document.getElementById('btnReload').onclick=()=>loadAll();
+
+function render(){destroyCharts();
+  if(state.tab==='overall')renderOverall();else if(state.tab==='live')renderLive();else renderVideo();}
+function emptyMsg(el){el.innerHTML='<div class="empty"><b>Chưa có data</b>Bấm Tải lại hoặc kiểm tra Google Sheet.</div>';}
+
+/* ============ CHART OPTS ============ */
+function chartOpts(dual){const o={maintainAspectRatio:false,plugins:{legend:{display:dual,position:'top',labels:{font:{size:10},boxWidth:12,padding:8}}},scales:{y:{beginAtZero:true,ticks:{font:{size:9},callback:v=>fmtVND(v)},grid:{color:'#f1f2f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}};if(dual)o.scales.y1={position:'right',beginAtZero:true,ticks:{font:{size:9}},grid:{display:false}};return o;}
+
+/* ============ RENDER OVERALL ============ */
+function renderOverall(){
+  const el=document.getElementById('page-overall');
+  let src=filterByDate(dataSource,'date');
+  if(!src.length){emptyMsg(el);return;}
+  const sS=k=>src.reduce((a,r)=>a+(r[k]||0),0);
+  const gmv=sS('gmv'),nmv=sS('nmv'),ads=sS('ads'),ord=sS('orders');
+  const roas=ads?nmv/ads:0,adspct=nmv?ads/nmv:0,aov=ord?nmv/ord:0;
+  const gRows=src.filter(r=>r.gmv>0);const gmvC=gRows.reduce((a,r)=>a+r.gmv,0),nmvC=gRows.reduce((a,r)=>a+r.nmv,0);
+  const cr=gmvC>0?Math.max(0,(gmvC-nmvC)/gmvC):null;
+  // Comparison period
+  const cmp=comparisonPeriod();
+  let cmpGmv=0,cmpNmv=0,cmpAds=0,cmpOrd=0,cmpHtml='';
+  if(cmp){
+    const cmpSrc=filterByDateRange(dataSource,'date',cmp.from,cmp.to);
+    cmpGmv=cmpSrc.reduce((a,r)=>a+r.gmv,0);cmpNmv=cmpSrc.reduce((a,r)=>a+r.nmv,0);
+    cmpAds=cmpSrc.reduce((a,r)=>a+r.ads,0);cmpOrd=cmpSrc.reduce((a,r)=>a+r.orders,0);
+    cmpHtml=`<div class="cmp"><b>So cùng kỳ:</b> ${cmp.label} (${cmp.days} ngày) · NMV ${fmtVND(cmpNmv)} · Ads ${fmtVND(cmpAds)}</div>`;
+  }
+  // Plan
+  const planSrc=filterByDate(dataPlan,'date');
+  const gmvPlan=planSrc.reduce((a,r)=>a+(r.gmvPlan||0),0);
+  const planTxt=gmvPlan?` · Plan ${fmtVND(gmvPlan)} (${fmtPct(gmv/gmvPlan)})`:'';
+  const kpis=[
+    ['GMV',fmtVND(gmv),'var(--ink)',`${growthHtml(gmv,cmpGmv)} vs CK${planTxt}`],
+    ['NMV',fmtVND(nmv),'var(--up)',`${growthHtml(nmv,cmpNmv)} vs CK`],
+    ['Orders',ord?fmtNum(ord):'—','var(--tiktok)',`${growthHtml(ord,cmpOrd)} vs CK`],
+    ['ROAS',roas.toFixed(2),'var(--video)','NMV/Ads'],
+    ['Ads Cost %',fmtPct(adspct),'var(--neu)','trên NMV'],
+    ['Cancel Rate',cr!=null?fmtPct(cr):'—','var(--dn)','(GMV-NMV)/GMV'],
+    ['AOV',ord?fmtVND(aov):'—','var(--live)',''],
+    ['Ads',fmtVND(ads),'var(--ink2)',`${growthHtml(ads,cmpAds,true)} vs CK`],
+  ];
+  let html=cmpHtml+'<div class="kpis k8">'+kpis.map(k=>`<div class="kpi" style="--accent:${k[2]}"><div class="lb">${k[0]}</div><div class="vl">${k[1]}</div><div class="dt">${k[3]}</div></div>`).join('')+'</div>';
+  // trend
+  html+=`<div class="g31"><div class="card"><div class="ct">NMV &amp; Ads theo ngày <span class="hint">bar=NMV · line=Ads</span></div><div class="cw-lg"><canvas id="ovTrend"></canvas></div></div><div class="card"><div class="ct">NMV theo Source</div><div class="cw-lg"><canvas id="ovSrcPie"></canvas></div></div></div>`;
+  html+=`<div class="g2"><div class="card"><div class="ct">ROAS theo ngày</div><div class="cw"><canvas id="ovRoas"></canvas></div></div><div class="card"><div class="ct">Cancel Rate % theo ngày</div><div class="cw"><canvas id="ovCancel"></canvas></div></div></div>`;
+  // source breakdown
+  const bySrc={};src.forEach(r=>{const s=r.source;if(!bySrc[s])bySrc[s]={gmv:0,nmv:0,ads:0,orders:0};bySrc[s].gmv+=r.gmv;bySrc[s].nmv+=r.nmv;bySrc[s].ads+=r.ads;bySrc[s].orders+=r.orders;});
+  const srcList=Object.entries(bySrc).sort((a,b)=>b[1].nmv-a[1].nmv);
+  html+=`<div class="g31"><div class="card"><div class="ct">So sánh NMV theo Source</div><div class="cw-lg"><canvas id="ovSrcBar"></canvas></div></div><div class="card"></div></div>`;
+  html+=`<div class="card"><div class="ct">Chi tiết theo Source</div><table><thead><tr><th>Source</th><th>GMV</th><th>NMV</th><th>Ads</th><th>ROAS</th><th>Ads%</th><th>Cancel%</th><th>AOV</th><th>Orders</th><th>%NMV</th></tr></thead><tbody>`;
+  srcList.forEach(([s,v])=>{const ro=v.ads?v.nmv/v.ads:0,ac=v.nmv?v.ads/v.nmv:0,scr=v.gmv>0?Math.max(0,(v.gmv-v.nmv)/v.gmv):null,sao=v.orders?v.nmv/v.orders:0;
+    html+=`<tr><td><b>${s}</b></td><td>${fmtNum(v.gmv)}</td><td>${fmtNum(v.nmv)}</td><td>${fmtNum(v.ads)}</td><td>${ro.toFixed(2)}</td><td>${fmtPct(ac)}</td><td>${scr!=null?fmtPct(scr):'—'}</td><td>${v.orders?fmtVND(sao):'—'}</td><td>${fmtNum(v.orders)}</td><td>${nmv?fmtPct(v.nmv/nmv):'—'}</td></tr>`;});
+  html+=`<tr class="tot"><td>TỔNG</td><td>${fmtNum(gmv)}</td><td>${fmtNum(nmv)}</td><td>${fmtNum(ads)}</td><td>${roas.toFixed(2)}</td><td>${fmtPct(adspct)}</td><td>${cr!=null?fmtPct(cr):'—'}</td><td>${ord?fmtVND(aov):'—'}</td><td>${fmtNum(ord)}</td><td>100%</td></tr></tbody></table></div>`;
+  // daily detail
+  const dates=[...new Set(src.map(r=>r.date))].sort();
+  html+=`<div class="card"><div class="ct">Chi tiết theo ngày</div><table><thead><tr><th>Ngày</th><th>GMV</th><th>NMV</th><th>Ads</th><th>ROAS</th><th>Cancel%</th><th>Orders</th></tr></thead><tbody>`;
+  dates.forEach(d=>{const dr=src.filter(r=>r.date===d);const g=dr.reduce((a,r)=>a+r.gmv,0),n=dr.reduce((a,r)=>a+r.nmv,0),a=dr.reduce((a,r)=>a+r.ads,0),o=dr.reduce((a,r)=>a+r.orders,0);
+    const dcr=g>0?Math.max(0,(g-n)/g):null;
+    html+=`<tr><td>${d}</td><td>${fmtNum(g)}</td><td>${fmtNum(n)}</td><td>${fmtNum(a)}</td><td>${a?(n/a).toFixed(2):'—'}</td><td>${dcr!=null?fmtPct(dcr):'—'}</td><td>${fmtNum(o)}</td></tr>`;});
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+  // charts
+  const gd={};dates.forEach(d=>gd[d]={nmv:0,ads:0,gmvC:0,nmvC:0});
+  src.forEach(r=>{if(gd[r.date]){gd[r.date].nmv+=r.nmv;gd[r.date].ads+=r.ads;if(r.gmv>0){gd[r.date].gmvC+=r.gmv;gd[r.date].nmvC+=r.nmv;}}});
+  const lbl=dates.map(d=>d.slice(5));
+  charts.ovTrend=new Chart(document.getElementById('ovTrend'),{data:{labels:lbl,datasets:[{type:'bar',label:'NMV',data:dates.map(d=>gd[d].nmv),backgroundColor:'#c7d2fe',borderRadius:3,yAxisID:'y'},{type:'line',label:'Ads',data:dates.map(d=>gd[d].ads),borderColor:'#ee4d2d',borderWidth:2,pointRadius:2,tension:.35,yAxisID:'y1'}]},options:chartOpts(true)});
+  charts.ovSrcPie=new Chart(document.getElementById('ovSrcPie'),{type:'doughnut',data:{labels:srcList.map(s=>s[0]),datasets:[{data:srcList.map(s=>s[1].nmv),backgroundColor:srcList.map((_,i)=>SCOL[i%SCOL.length]),borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}},cutout:'55%',maintainAspectRatio:false}});
+  charts.ovRoas=new Chart(document.getElementById('ovRoas'),{data:{labels:lbl,datasets:[{type:'line',label:'ROAS',data:dates.map(d=>gd[d].ads?gd[d].nmv/gd[d].ads:0),borderColor:'#1877f2',backgroundColor:'rgba(24,119,242,.08)',fill:true,borderWidth:2,pointRadius:2,tension:.35}]},options:chartOpts(false)});
+  charts.ovCancel=new Chart(document.getElementById('ovCancel'),{data:{labels:lbl,datasets:[{type:'line',label:'Cancel%',data:dates.map(d=>gd[d].gmvC>0?Math.max(0,(gd[d].gmvC-gd[d].nmvC)/gd[d].gmvC*100):0),borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.08)',fill:true,borderWidth:2,pointRadius:2,tension:.35}]},options:chartOpts(false)});
+  charts.ovSrcBar=new Chart(document.getElementById('ovSrcBar'),{type:'bar',data:{labels:srcList.map(s=>s[0]),datasets:[{label:'NMV',data:srcList.map(s=>s[1].nmv),backgroundColor:srcList.map((_,i)=>SCOL[i%SCOL.length]),borderRadius:3}]},options:chartOpts(false)});
+}
+
+/* ============ RENDER LIVE ============ */
+function renderLive(){
+  const rows=filterByDate(dataLive,'date');
+  const el=document.getElementById('page-live');if(!rows.length){emptyMsg(el);return;}
+  const sum=k=>rows.reduce((a,r)=>a+(r[k]||0),0);
+  const sessions=rows.length,hours=sum('hours'),cust=sum('cust'),ads=sum('ads'),gmv=sum('gmv');
+  const roi=ads?gmv/ads:0,revh=hours?gmv/hours:0;
+  const avgCtr=rows.length?rows.reduce((a,r)=>a+(r.ctr||0),0)/rows.length:0;
+  const avgAov=rows.length?rows.reduce((a,r)=>a+(r.aov||0),0)/rows.length:0;
+  // Comparison
+  const cmp=comparisonPeriod();let cmpGmv=0,cmpSess=0,cmpHtml='';
+  if(cmp){const cr=filterByDateRange(dataLive,'date',cmp.from,cmp.to);cmpGmv=cr.reduce((a,r)=>a+r.gmv,0);cmpSess=cr.length;
+    cmpHtml=`<div class="cmp"><b>So cùng kỳ:</b> ${cmp.label} · ${cmpSess} sessions · GMV ${fmtVND(cmpGmv)}</div>`;}
+  const kpis=[['Sessions',fmtNum(sessions),'var(--live)',`${growthHtml(sessions,cmpSess)} vs CK`],['GMV',fmtVND(gmv),'var(--ink)',`${growthHtml(gmv,cmpGmv)} vs CK`],['Ads',fmtVND(ads),'var(--neu)',''],
+    ['ROI',roi.toFixed(2),'var(--up)','GMV/Ads'],['GMV/giờ',fmtVND(revh),'var(--video)',hours.toFixed(1)+'h'],
+    ['Khách',fmtNum(cust),'var(--tiktok)',''],['CTR TB',avgCtr.toFixed(2)+'%','var(--ink2)',''],['AOV TB',fmtVND(avgAov),'var(--live)','']];
+  let html=cmpHtml+'<div class="kpis k8">'+kpis.map(k=>`<div class="kpi" style="--accent:${k[2]}"><div class="lb">${k[0]}</div><div class="vl">${k[1]}</div><div class="dt">${k[3]}</div></div>`).join('')+'</div>';
+  html+=`<div class="g31"><div class="card"><div class="ct">GMV &amp; ROI theo ngày</div><div class="cw-lg"><canvas id="lvTrend"></canvas></div></div><div class="card"><div class="ct">GMV theo Host</div><div class="cw-lg"><canvas id="lvHostPie"></canvas></div></div></div>`;
+  const byH={};rows.forEach(r=>{const h=r.host;if(!byH[h])byH[h]={s:0,hr:0,cust:0,ads:0,gmv:0};byH[h].s++;byH[h].hr+=r.hours;byH[h].cust+=r.cust;byH[h].ads+=r.ads;byH[h].gmv+=r.gmv;});
+  const hostList=Object.entries(byH).sort((a,b)=>b[1].gmv-a[1].gmv);
+  html+=`<div class="card"><div class="ct">Performance theo Host</div><table><thead><tr><th>Host</th><th>Sessions</th><th>Giờ</th><th>Khách</th><th>Ads</th><th>GMV</th><th>ROI</th><th>GMV/giờ</th></tr></thead><tbody>`;
+  hostList.forEach(([h,v])=>{html+=`<tr><td>${h}</td><td>${v.s}</td><td>${v.hr.toFixed(1)}</td><td>${fmtNum(v.cust)}</td><td>${fmtNum(v.ads)}</td><td>${fmtNum(v.gmv)}</td><td>${v.ads?(v.gmv/v.ads).toFixed(2):'—'}</td><td>${v.hr?fmtVND(v.gmv/v.hr):'—'}</td></tr>`;});
+  html+=`<tr class="tot"><td>TỔNG</td><td>${sessions}</td><td>${hours.toFixed(1)}</td><td>${fmtNum(cust)}</td><td>${fmtNum(ads)}</td><td>${fmtNum(gmv)}</td><td>${roi.toFixed(2)}</td><td>${fmtVND(revh)}</td></tr></tbody></table></div>`;
+  el.innerHTML=html;
+  const dates=[...new Set(rows.map(r=>r.date))].sort();const dd={};dates.forEach(d=>dd[d]={gmv:0,ads:0});rows.forEach(r=>{dd[r.date].gmv+=r.gmv;dd[r.date].ads+=r.ads;});
+  charts.lvTrend=new Chart(document.getElementById('lvTrend'),{data:{labels:dates.map(d=>d.slice(5)),datasets:[{type:'bar',label:'GMV',data:dates.map(d=>dd[d].gmv),backgroundColor:'#f9a8d4',borderRadius:3,yAxisID:'y'},{type:'line',label:'ROI',data:dates.map(d=>dd[d].ads?dd[d].gmv/dd[d].ads:0),borderColor:'#d6336c',borderWidth:2,pointRadius:2,tension:.35,yAxisID:'y1'}]},options:chartOpts(true)});
+  charts.lvHostPie=new Chart(document.getElementById('lvHostPie'),{type:'doughnut',data:{labels:hostList.map(h=>h[0]),datasets:[{data:hostList.map(h=>h[1].gmv),backgroundColor:hostList.map((_,i)=>HCOL[i%HCOL.length]),borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6}}},cutout:'55%',maintainAspectRatio:false}});
+}
+
+/* ============ RENDER VIDEO ============ */
+function renderVideo(){
+  const all=dataVideo;const el=document.getElementById('page-video');if(!all.length){emptyMsg(el);return;}
+  const weeks=all.filter(x=>x.kind==='week'),totals=all.filter(x=>x.kind==='total');
+  const base=totals.length?totals:weeks;
+  const sum=k=>base.reduce((a,x)=>a+(+x[k]||0),0);
+  const vP=sum('vplan'),vA=sum('vactual'),gP=sum('gplan'),gA=sum('gactual'),bP=sum('bplan'),bA=sum('bactual');
+  const kpis=[['Video Plan',fmtNum(vP),'var(--video)',''],['Video Actual',fmtNum(vA),'var(--up)',vP?fmtPct(vA/vP)+' đạt':''],
+    ['GMV Plan',fmtVND(gP),'var(--neu)',''],['GMV Actual',fmtVND(gA),'var(--ink)',gP?fmtPct(gA/gP)+' đạt':''],
+    ['Booking Plan',fmtVND(bP),'var(--live)',''],['Booking Actual',fmtVND(bA),'var(--dn)','']];
+  let html='<div class="kpis k6">'+kpis.map(k=>`<div class="kpi" style="--accent:${k[2]}"><div class="lb">${k[0]}</div><div class="vl">${k[1]}</div><div class="dt">${k[3]}</div></div>`).join('')+'</div>';
+  html+=`<div class="g2"><div class="card"><div class="ct">Số video: Plan vs Actual</div><div class="cw-lg"><canvas id="vdVideo"></canvas></div></div><div class="card"><div class="ct">GMV Video: Plan vs Actual</div><div class="cw-lg"><canvas id="vdGmv"></canvas></div></div></div>`;
+  html+=`<div class="card"><div class="ct">Chi tiết theo tuần</div><table><thead><tr><th>Tháng</th><th>Tuần</th><th>Video Plan</th><th>Video Actual</th><th>% đạt</th><th>GMV Plan</th><th>GMV Actual</th><th>% đạt</th><th>Booking Actual</th></tr></thead><tbody>`;
+  let curM='';all.forEach(x=>{const isTot=x.kind!=='week';const ml=x.month&&x.month!==curM?(curM=x.month,x.month):'';
+    const vp=x.vplan?fmtPct(x.vactual/x.vplan):'—',gp=x.gplan?fmtPct(x.gactual/x.gplan):'—';
+    html+=`<tr class="${isTot?'tot':''}"><td>${ml}</td><td>${x.week}</td><td>${fmtNum(x.vplan)}</td><td>${fmtNum(x.vactual)}</td><td>${vp}</td><td>${fmtNum(x.gplan)}</td><td>${fmtNum(x.gactual)}</td><td>${gp}</td><td>${x.bactual?fmtNum(x.bactual):'—'}</td></tr>`;});
+  html+='</tbody></table></div>';el.innerHTML=html;
+  const wl=weeks.map(x=>(x.month?x.month.split(' ')[0]+' ':'')+x.week);
+  charts.vdVideo=new Chart(document.getElementById('vdVideo'),{type:'bar',data:{labels:wl,datasets:[{label:'Plan',data:weeks.map(x=>x.vplan),backgroundColor:'#c4b5fd',borderRadius:3},{label:'Actual',data:weeks.map(x=>x.vactual),backgroundColor:'#7c3aed',borderRadius:3}]},options:chartOpts(true)});
+  charts.vdGmv=new Chart(document.getElementById('vdGmv'),{data:{labels:wl,datasets:[{type:'bar',label:'GMV Plan',data:weeks.map(x=>x.gplan),backgroundColor:'#fde68a',borderRadius:3},{type:'bar',label:'GMV Actual',data:weeks.map(x=>x.gactual),backgroundColor:'#d97706',borderRadius:3}]},options:chartOpts(true)});
+}
+
+/* ============ INIT ============ */
+render();loadAll();
+</script>
+</body>
+</html>
