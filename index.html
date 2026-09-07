@@ -94,7 +94,7 @@ tr.tot{background:#eef2ff;font-weight:800;}tr.tot td{border-bottom:none;}
 </div>
 <script>
 /* ============ DATA ============ */
-let dataSource=[], dataLive=[], dataVideo=[], dataPlan=[], dataProduct=[];
+let dataSource=[], dataLive=[], dataVideo=[], dataPlan=[], dataProduct=[], dataAds=[];
 let state={tab:'overall',from:'',to:''};
 let charts={};
 
@@ -152,7 +152,8 @@ const URLS={
   plan:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=29240632&single=true&output=csv",
   source:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=582634795&single=true&output=csv",
   video:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=467964102&single=true&output=csv",
-  live:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=206601074&single=true&output=csv"
+  live:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=206601074&single=true&output=csv",
+  ads:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQKlCmvpJrM0LU6iGmakyrTHQ7XQZ2wXm5_yUnR-4aUd6v3oxQvke22aioZEJFZDVb-pxkwhIWbvSH_/pub?gid=1707741749&single=true&output=csv"
 };
 
 /* ============ HELPERS ============ */
@@ -224,6 +225,40 @@ function parseSource(rows){
   // Store product detail globally
   if(detail.length)dataProduct=detail;
   return Object.values(agg);
+}
+
+// ADS: Date | Cost Product | Cost LIVE  (Product = Video+Shoptab gộp)
+function parseAds(rows){
+  const hi=findRow(rows,r=>r.some(c=>low(c)==='date'||low(c)==='ngày'||low(c)==='ngay'));
+  if(hi<0)return[];
+  const H=rows[hi].map(low);
+  const ci={date:H.findIndex(h=>h==='date'||h==='ngày'||h==='ngay'),
+    prod:H.findIndex(h=>h.includes('product')||h.includes('sản phẩm')||h.includes('san pham')||h.includes('thẻ')||h.includes('the sp')),
+    live:H.findIndex(h=>h.includes('live'))};
+  if(ci.date<0)return[];
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i];if(!r||!r[ci.date])continue;
+    const dRaw=String(r[ci.date]).trim();if(low(dRaw)==='total'||low(dRaw)==='tổng'||low(dRaw)==='tong')continue;
+    const date=normDate(dRaw);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+    const cp=ci.prod>=0?num(r[ci.prod]):0, cl=ci.live>=0?num(r[ci.live]):0;
+    out.push({date,costProduct:cp,costLive:cl});
+  }
+  return out;
+}
+// Ghép ads vào dataSource theo ngày: Cost LIVE→live, Cost Product→video (video+shoptab gộp, xem tổng ở Overall)
+function mergeAds(){
+  if(!dataAds.length||!dataSource.length)return;
+  const adsByDate={};dataAds.forEach(a=>{adsByDate[a.date]={p:a.costProduct,l:a.costLive};});
+  // reset ads cũ trên source (tránh cộng dồn khi reload)
+  dataSource.forEach(r=>{r.ads=0;});
+  // gán live cost vào dòng source 'live'; product cost vào dòng 'video'
+  for(const date in adsByDate){
+    const a=adsByDate[date];
+    const liveRow=dataSource.find(r=>r.date===date&&r.source==='live');
+    if(liveRow)liveRow.ads=a.l; else if(a.l>0)dataSource.push({date,source:'live',gmv:0,nmv:0,ads:a.l,orders:0});
+    const vidRow=dataSource.find(r=>r.date===date&&r.source==='video');
+    if(vidRow)vidRow.ads=a.p; else if(a.p>0)dataSource.push({date,source:'video',gmv:0,nmv:0,ads:a.p,orders:0});
+  }
 }
 
 // LIVE: DATE|...|Host|Timeline|Customers|...|ADS|...|Attributed GMV|ROI|ACHIEVE%
@@ -302,7 +337,7 @@ function parsePlan(rows){
 /* ============ LOAD ALL ============ */
 async function loadAll(){
   setStatus('load','Đang tải...');
-  dataSource=[];dataLive=[];dataVideo=[];dataPlan=[];dataProduct=[];
+  dataSource=[];dataLive=[];dataVideo=[];dataPlan=[];dataProduct=[];dataAds=[];
   const results={};
   for(const [key,url] of Object.entries(URLS)){
     if(!url)continue;
@@ -312,9 +347,11 @@ async function loadAll(){
       else if(key==='live')dataLive=parseLive(rows);
       else if(key==='video')dataVideo=parseVideo(rows);
       else if(key==='plan')dataPlan=parsePlan(rows);
-      results[key]=key==='source'?dataSource.length:key==='live'?dataLive.length:key==='video'?dataVideo.length:dataPlan.length;
+      else if(key==='ads')dataAds=parseAds(rows);
+      results[key]=key==='source'?dataSource.length:key==='live'?dataLive.length:key==='video'?dataVideo.length:key==='ads'?dataAds.length:dataPlan.length;
     }catch(e){results[key]='ERR:'+e.message;}
   }
+  mergeAds();
   const tot=dataSource.length+dataLive.length+dataVideo.length;
   const statusParts=Object.entries(results).map(([k,v])=>`${k}:${v}`).join(' · ');
   if(tot>0)setStatus('live',statusParts);
